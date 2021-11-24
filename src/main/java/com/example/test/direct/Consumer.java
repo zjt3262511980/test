@@ -1,13 +1,12 @@
-package com.example.test.simple;
+package com.example.test.direct;
 
 import com.rabbitmq.client.*;
 
 import java.io.IOException;
 
 public class Consumer {
-    public static void main(String[] args) {
-        //所以中间件技术都是基于tcp/ip协议基础上构建新型的协议规范，只不过rabbitmq遵循的是amqp
-        //ip port
+    private static Runnable runnable=()->{
+       final String name=Thread.currentThread().getName();
         // 创建连接工厂
         ConnectionFactory connectionFactory=new ConnectionFactory();
         // 设置连接属性
@@ -25,10 +24,10 @@ public class Consumer {
             //通过连接获取通道
             channel=connection.createChannel();
             //接受消息,1.从那个队列接受消息
-            channel.basicConsume("queue1", true, new DeliverCallback() {
+            channel.basicConsume(name, true, new DeliverCallback() {
                 @Override
                 public void handle(String s, Delivery delivery) throws IOException {
-                    System.out.println("收到queue1消息：" + new String(delivery.getBody(), "UTF-8"));
+                    System.out.println("收到"+name+"消息：" + new String(delivery.getBody(), "UTF-8"));
                 }
             }, new CancelCallback() {
                 @Override
@@ -37,7 +36,7 @@ public class Consumer {
                 }
             });
             System.out.println("开始接受消息");
-           // System.in.read();
+            // System.in.read();//可以让程序不停继续接受消息
         } catch (Exception e) {
             e.printStackTrace();
         }finally {
@@ -58,6 +57,11 @@ public class Consumer {
                 }
             }
         }
-
+    };
+    public static void main(String[] args) {
+        // 启动三个线程去执行
+        new Thread(runnable, "queue1").start();
+        new Thread(runnable, "queue2").start();
+        new Thread(runnable, "queue3").start();
     }
 }
